@@ -1,0 +1,14 @@
+name = CORS FILE PDF
+description = Downloads and displays a PDF in the PDF reader from a private cloud files network
+core = 7.x
+
+dependencies[] = file
+dependencies[] = libraries
+dependencies[] = cors_file
+
+files[] = includes/cors_file_pdf.field.inc
+files[] = cors_file_pdf.module
+
+project = "cors_file_pdf"
+
+

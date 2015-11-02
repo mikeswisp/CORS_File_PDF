@@ -1,0 +1,116 @@
+<?php
+/**
+ * @file Module file declaration that sets up a field formatter for the PDF module
+ *
+ * Much of this functionality is based off of the PDF module
+ *
+ * PDF Module
+ * @link https://www.drupal.org/project/pdf
+ *
+ * Github Repo for php-opencloud
+ * @link https://github.com/rackspace/php-opencloud/tree/working/samples
+ */
+
+module_load_include('inc', 'cors_file_pdf', '/includes/cors_file_pdf.field');
+
+/**
+ * Implements hook_theme()
+ *
+ * @return array
+ *  The array that decribes to the theme how to render a particular component
+ */
+function cors_file_pdf_theme() {
+
+  $theme = array(
+    'rackspace_cors_file_formatter' => array(
+      'variables' => array(
+        'file' => NULL,
+        'keep_pdfjs' => NULL,
+        'width' => NULL,
+        'height' => Null,
+      ),
+      'file' => 'includes/cors_file_pdf.field.inc',
+    ),
+  );
+  return $theme;
+}
+
+/**
+ * Implments hook_libraries_info()
+ *
+ * @return array
+ *  An associative array whose keys are internal names of libraries and
+ *  whose values are describing each library
+ */
+function cors_file_pdf_libraries_info() {
+
+  $libraries['pdf.js'] = array(
+    'name' => 'pdf.js',
+    'vendor url' => 'http://mozilla.github.io/pdf.js/',
+    'download url' => 'http://mozilla.github.io/pdf.js/getting_started/#download',
+    'version arguments' => array(
+      'file' => 'build/pdf.js',
+      'pattern' => '@PDFJS\.version\s=\s\'(.*)\'@',
+      'lines' => 30,
+    ),
+    'files' => array(
+      'js' => array(
+        'build/pdf.js',
+      ),
+    ),
+    'variants' => array(
+      'viewer' => array(
+        'files' => array(
+          'js' => array(
+            'build/pdf.js',
+            'web/viewer.js',
+          ),
+        ),
+      ),
+      //DEV
+      'textlayer' => array(
+        'files' => array(
+          'js' => array(
+            'build/pdf.js',
+            'web/pdf_find_bar.js',
+            'web/pdf_find_controller.js',
+            'web/ui_utils.js',
+            'web/text_layer_builder.js',
+          ),
+        ),
+      )
+    ),
+  );
+  return $libraries;
+}
+
+/**
+ * Implements hook_cron()
+ *
+ * Routine that hooks into the cron every 3 hours and cleans up any PDF
+ * Files that are not being used anymore
+ *
+ */
+function cors_file_pdf_cron() {
+
+  $files = file_scan_directory('public://', '/.*\.pdf$/');
+
+  foreach ($files as $key => $value) {
+    $date_string = date('F d Y H:i:s');
+    $date = strtotime('-3 hours', strtotime($date_string));
+    $path = drupal_realpath($value->uri);
+
+    $last_modified = date('F d Y H:i:s', filemtime($path));
+    $now_offset = date('F d Y H:i:s', $date);
+
+    // Detect if the file needs to be deleted or not
+    if ($last_modified < $now_offset) {
+      try {
+        drupal_unlink($value->uri);
+        _cors_file_pdf_write_watchdog('Cron Deleted Cache File: ' . $value->filename);
+      } catch(Exception $e) {
+        _cors_file_pdf_write_watchdog($e->getMessage());
+      }
+    }
+  }
+}
