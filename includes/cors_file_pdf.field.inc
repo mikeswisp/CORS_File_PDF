@@ -186,7 +186,7 @@ function theme_rackspace_cors_file_formatter($variables) {
   }
 
   $uri = _cors_file_pdf_get_file($variables['file']->uri);
-  if ($uri != NULL) {
+  if ($uri != FALSE) {
     $file_url = file_create_url($uri);
   } else {
     $content = array(
@@ -297,11 +297,11 @@ function _cors_file_pdf_get_file($uri) {
       return $file;
 
     } else {
-      return NULL;
+      return FALSE;
     }
   } catch(Exception $e) {
     _cors_file_pdf_write_watchdog($e->getMessage());
-    return NULL;
+    return FALSE;
   }
 }
 
